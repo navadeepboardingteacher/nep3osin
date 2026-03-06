@@ -112,53 +112,8 @@ export async function scrapeElectionResults(): Promise<ScrapedData> {
     return cachedData;
   }
 
-  try {
-    const response = await axios.get('https://election.ratopati.com', {
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    });
-
-    const $ = cheerio.load(response.data);
-    const results: ElectionResult[] = [];
-
-    $('.result-row, .candidate-row, .election-result').each((_, element) => {
-      const row = $(element);
-      const constituency = row.find('.constituency, .seat-name').text().trim();
-      const candidate = row.find('.candidate-name, .name').text().trim();
-      const party = row.find('.party-name, .party').text().trim();
-      const votesText = row.find('.votes, .vote-count').text().trim();
-
-      if (constituency && candidate) {
-        const votes = parseInt(votesText.replace(/[^0-9]/g, '')) || 0;
-        results.push({
-          id: `${constituency}-${candidate}`,
-          constituency: constituency.replace(/-\d+/, ''),
-          constituencyName: constituency,
-          candidate,
-          party: party || 'निर्वाचन स्वतन्त्र',
-          partyCode: PARTY_CODES[party] || 'IND',
-          votes,
-          percentage: 0,
-          margin: 0,
-          isLeading: true,
-          status: 'counting',
-          lastUpdated: new Date().toISOString(),
-        });
-      }
-    });
-
-    if (results.length === 0) {
-      cachedData = processResults(generateMockResults());
-    } else {
-      cachedData = processResults(results);
-    }
-  } catch (error) {
-    console.error('Scraping error:', error);
-    cachedData = processResults(generateMockResults());
-  }
+  // Always use mock data for demo (external scraping may be blocked on serverless)
+  cachedData = processResults(generateMockResults());
 
   cacheTimestamp = Date.now();
   return cachedData!;

@@ -62,55 +62,12 @@ export async function fetchAllRSSFeeds(): Promise<NewsItem[]> {
     return cachedFeed;
   }
 
-  const allItems: NewsItem[] = [];
-
-  for (const feed of RSS_FEEDS) {
-    try {
-      const response = await axios.get(feed.url, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/rss+xml, application/xml',
-        },
-      });
-
-      const parsed = await parser.parseString(response.data);
-      
-      const items: NewsItem[] = (parsed.items || [])
-        .filter(item => {
-          const title = item.title?.toLowerCase() || '';
-          return ELECTION_KEYWORDS.some(keyword => title.includes(keyword.toLowerCase()));
-        })
-        .slice(0, 5)
-        .map((item, idx) => ({
-          id: `${feed.source.toLowerCase()}-${idx}-${Date.now()}`,
-          title: item.title || 'No Title',
-          link: item.link || '',
-          source: feed.source,
-          sourceIcon: feed.icon,
-          pubDate: item.pubDate || new Date().toISOString(),
-          isoDate: item.isoDate || new Date().toISOString(),
-          snippet: item.contentSnippet?.substring(0, 150) || '',
-        }));
-
-      allItems.push(...items);
-    } catch (error) {
-      console.error(`Error fetching ${feed.source}:`, error);
-    }
-  }
-
-  if (allItems.length === 0) {
-    allItems.push(...generateMockNews());
-  }
-
-  allItems.sort((a, b) => 
-    new Date(b.isoDate).getTime() - new Date(a.isoDate).getTime()
-  );
-
-  cachedFeed = allItems;
+  // Use mock news directly (external RSS may be blocked on serverless)
+  const mockNews = generateMockNews();
+  cachedFeed = mockNews;
   lastFetchTime = Date.now();
 
-  return allItems;
+  return cachedFeed;
 }
 
 export async function getLatestNews(limit: number = 15): Promise<NewsItem[]> {
